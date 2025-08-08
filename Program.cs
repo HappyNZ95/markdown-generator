@@ -6,17 +6,16 @@ namespace MarkdownGenerator
     class Program
     {
         static void Main(string[] args)
+
         {
             string title = getUserInput("Title: ");
             string[] tags = getTags();
+            Dictionary<string, string> additionalProperties = getAdditionalProperties();
 
-            for (int i = 0; i < tags.Count(); i++)
+            foreach (KeyValuePair<string, string> property in additionalProperties)
             {
-                Console.WriteLine(tags[i]);
+                Console.WriteLine($"Key: {property.Key}, Value: {property.Value}");
             }
-
-
-
 
         }
 
@@ -41,8 +40,6 @@ namespace MarkdownGenerator
             return null;
 
 
-
-
         }
 
         static string[] getTags()
@@ -63,6 +60,38 @@ namespace MarkdownGenerator
                 return tagList;
             }
             return null;
+        }
+
+        static Dictionary<string, string> getAdditionalProperties()
+        {
+            Dictionary<string, string>? additionalProperties = new Dictionary<string, string>();
+            bool moreKeyValues = true;
+            while (moreKeyValues == true)
+            {
+                string? input = getUserInput("Additional properties? (key=value or blank to finish", true);
+                if (String.IsNullOrEmpty(input))
+                {
+                    return additionalProperties;
+                }
+                for (int i = 0; i < input.Count(); i++)
+                {
+                    bool hasEquals = false;
+                    if (input[i] == '=')
+                    {
+                        hasEquals = true;
+                        break;
+                    }
+
+                    if (hasEquals == true)
+                    {
+                        string[] splitKeyValue = input.Split("=");
+                        Console.WriteLine(splitKeyValue);
+                        additionalProperties.Add(splitKeyValue[0], splitKeyValue[1]);
+                    }
+                }
+
+            }
+            return additionalProperties;
         }
     }
 }

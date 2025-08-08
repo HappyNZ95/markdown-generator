@@ -75,19 +75,16 @@ namespace MarkdownGenerator
                 }
                 for (int i = 0; i < input.Count(); i++)
                 {
-                    bool hasEquals = false;
                     if (input[i] == '=')
                     {
-                        hasEquals = true;
                         break;
                     }
 
-                    if (hasEquals == true)
-                    {
-                        string[] splitKeyValue = input.Split("=");
-                        Console.WriteLine(splitKeyValue);
-                        additionalProperties.Add(splitKeyValue[0], splitKeyValue[1]);
-                    }
+                }
+
+                {
+                    string[] splitKeyValue = input.Split("=");
+                    additionalProperties.Add(splitKeyValue[0], splitKeyValue[1]);
                 }
 
             }

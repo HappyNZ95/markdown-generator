@@ -8,8 +8,16 @@ namespace MarkdownGenerator
         static void Main(string[] args)
         {
             string title = getUserInput("Title: ");
-            string tags = getUserInput("Tags: ", true);
-            List<String> tagList = new List<String>();
+            string[] tags = getTags();
+
+            for (int i = 0; i < tags.Count(); i++)
+            {
+                Console.WriteLine(tags[i]);
+            }
+
+
+
+
         }
 
         static string? getUserInput(string prompt, bool allowEmpty = false)
@@ -35,6 +43,26 @@ namespace MarkdownGenerator
 
 
 
+        }
+
+        static string[] getTags()
+        {
+            string? tags = getUserInput("Tags:", true);
+            string[] tagList;
+
+            if (tags != null)
+            {
+                tagList = tags.Split(",");
+                for (int i = 0; i < tagList.Count(); i++)
+                {
+                    if (tagList[i] != "")
+                    {
+                        tagList[i] = tagList[i].TrimStart().Trim();
+                    }
+                }
+                return tagList;
+            }
+            return null;
         }
     }
 }

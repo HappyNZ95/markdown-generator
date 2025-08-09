@@ -13,12 +13,11 @@ namespace MarkdownGenerator
             string title = getUserInput("Title: ");
             string[] tags = getTags();
             Dictionary<string, string> additionalProperties = getAdditionalProperties();
-
-
-            //Testing outputs
-            testOutputs(formattedDate, title, tags, additionalProperties);
-
-
+            List<string> frontMatter = generateFrontMatter(formattedDate, title, additionalProperties, tags);
+            foreach (string line in frontMatter)
+            {
+                Console.WriteLine(line);
+            }
 
         }
 
@@ -65,7 +64,7 @@ namespace MarkdownGenerator
             return null;
         }
 
-        static Dictionary<string, string> getAdditionalProperties()
+        static Dictionary<string, string>? getAdditionalProperties()
         {
             Dictionary<string, string>? additionalProperties = new Dictionary<string, string>();
             bool moreKeyValues = true;
@@ -106,22 +105,38 @@ namespace MarkdownGenerator
                 Console.WriteLine($"Key: {property.Key}, Value: {property.Value}");
             }
 
-            Console.WriteLine(generateFrontMatter(formattedDate, title, tags, additionalProperties));
+            List<string> frontmatterLines = generateFrontMatter(formattedDate, title, additionalProperties, tags);
+            foreach (string line in frontmatterLines)
+            {
+                Console.WriteLine(line);
+            }
         }
-        static string[] generateFrontMatter(string date, string title, string[] tags, Dictionary<string, string> additionalProperties)
+
+        static List<string> generateFrontMatter(string date, string title, Dictionary<string, string> additionalProperties, string[] tags = null)
         {
+            List<string> frontMatterLines = new List<string> { "---", $"date: {date}", $"title: {title}" };
 
-            string tagsJoined = string.Join(", ", tags);
+            if (tags != null)
+            {
+                string tagsJoined = string.Join(", ", tags);
+                frontMatterLines.Add($"tags: {tagsJoined}");
+            }
 
-            string[] frontMatterLines =
-    ["---",
-            $"date: {date}",
-            $"title: {title}",
-            $"tags: {tagsJoined}",
-            "---"];
+
+            if (additionalProperties != null)
+            {
+                foreach (var property in additionalProperties)
+                {
+                    frontMatterLines.Add($"{property.Key}: {property.Value}");
+                }
+            }
+
+            frontMatterLines.Add("---");
 
             return frontMatterLines;
 
+
         }
+
     }
 }

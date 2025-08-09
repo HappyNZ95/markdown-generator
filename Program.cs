@@ -8,14 +8,17 @@ namespace MarkdownGenerator
         static void Main(string[] args)
 
         {
+            DateTime date = DateTime.Now;
+            string formattedDate = date.ToString("yyyy-MM-dd");
             string title = getUserInput("Title: ");
             string[] tags = getTags();
             Dictionary<string, string> additionalProperties = getAdditionalProperties();
 
-            foreach (KeyValuePair<string, string> property in additionalProperties)
-            {
-                Console.WriteLine($"Key: {property.Key}, Value: {property.Value}");
-            }
+
+            //Testing outputs
+            testOutputs(formattedDate, title, tags, additionalProperties);
+
+
 
         }
 
@@ -42,7 +45,7 @@ namespace MarkdownGenerator
 
         }
 
-        static string[] getTags()
+        static string[]? getTags()
         {
             string? tags = getUserInput("Tags:", true);
             string[] tagList;
@@ -89,6 +92,36 @@ namespace MarkdownGenerator
 
             }
             return additionalProperties;
+        }
+        static void testOutputs(string formattedDate, string title, string[] tags, Dictionary<string, string> additionalProperties)
+        {
+            Console.WriteLine(formattedDate);
+            Console.WriteLine(title);
+            foreach (string tag in tags)
+            {
+                Console.Write($"tag, ");
+            }
+            foreach (KeyValuePair<string, string> property in additionalProperties)
+            {
+                Console.WriteLine($"Key: {property.Key}, Value: {property.Value}");
+            }
+
+            Console.WriteLine(generateFrontMatter(formattedDate, title, tags, additionalProperties));
+        }
+        static string[] generateFrontMatter(string date, string title, string[] tags, Dictionary<string, string> additionalProperties)
+        {
+
+            string tagsJoined = string.Join(", ", tags);
+
+            string[] frontMatterLines =
+    ["---",
+            $"date: {date}",
+            $"title: {title}",
+            $"tags: {tagsJoined}",
+            "---"];
+
+            return frontMatterLines;
+
         }
     }
 }

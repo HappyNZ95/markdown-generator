@@ -18,8 +18,17 @@ namespace MarkdownGenerator
             string formattedDate = date.ToString("yyyy-MM-dd");
             string title = getUserInput("Title: ");
             string[] tags = getTags();
+
+            if (tags.Contains<string>("upcoming") && tags.Contains<string>("event"))
+            {
+                formattedDate = getUserInput("Date of Event (YYYY-MM-DD)");
+                Console.Write($"date: {date.ToString()}");
+                Console.WriteLine("There's an upcoming event!");
+            }
+
             Dictionary<string, string> additionalProperties = getAdditionalProperties();
             List<string> frontMatter = generateFrontMatter(formattedDate, title, additionalProperties, tags);
+
 
             // Build file
             string safeTitle = title.ToLower().Replace('/', '-');
@@ -31,6 +40,8 @@ namespace MarkdownGenerator
                 foreach (string line in frontMatter)
                     outputFile.WriteLine(line);
             }
+
+
 
             int result = execlp($"nvim", "nvim", $"{fullPath}.md", $"+ 52", null);
 

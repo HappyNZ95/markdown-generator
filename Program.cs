@@ -1,4 +1,6 @@
 ﻿// See https://aka.ms/new-console-template for more information
+using System;
+using System.Runtime.InteropServices;
 
 namespace MarkdownGenerator
 
@@ -8,18 +10,33 @@ namespace MarkdownGenerator
         static void Main(string[] args)
 
         {
+
+            string SAVE_LOCATION = $"{Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)}/sync-vault/Inbox/";
+
+            // Build frontmatter
             DateTime date = DateTime.Now;
             string formattedDate = date.ToString("yyyy-MM-dd");
             string title = getUserInput("Title: ");
             string[] tags = getTags();
             Dictionary<string, string> additionalProperties = getAdditionalProperties();
             List<string> frontMatter = generateFrontMatter(formattedDate, title, additionalProperties, tags);
-            foreach (string line in frontMatter)
+
+            // Build file
+            string safeTitle = title.ToLower().Replace('/', '-');
+            string fullPath = Path.Join(SAVE_LOCATION, safeTitle);
+
+            using (StreamWriter outputFile = new StreamWriter($"{fullPath}.md"))
             {
-                Console.WriteLine(line);
+                Console.WriteLine($"Saving to {fullPath}.md");
+                foreach (string line in frontMatter)
+                    outputFile.WriteLine(line);
             }
 
+            int result = execlp($"nvim", "nvim", $"{fullPath}.md", $"+ 52", null);
+
+
         }
+
 
         static string? getUserInput(string prompt, bool allowEmpty = false)
         {
@@ -132,11 +149,15 @@ namespace MarkdownGenerator
             }
 
             frontMatterLines.Add("---");
+            frontMatterLines.Add("");
 
             return frontMatterLines;
 
 
         }
+
+        [DllImport("libc", EntryPoint = "execlp", CharSet = CharSet.Ansi, SetLastError = true)]
+        private static extern int execlp(string program, string arg0, string arg1, string arg2, string? end);
 
     }
 }

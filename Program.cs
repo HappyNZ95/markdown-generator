@@ -1,6 +1,8 @@
 ﻿// See https://aka.ms/new-console-template for more information
 using System;
 using System.Runtime.InteropServices;
+using System.Net.Http;
+using System.Text; //Encoding.UTF8
 
 namespace MarkdownGenerator
 
@@ -44,21 +46,65 @@ namespace MarkdownGenerator
                     outputFile.WriteLine(line);
             }
 
-            if (upcomingEvent)
-            {
 
-            }
+            string prompt = @"Update the following obsidian note that outlines a plan for an upcoming event. 
+		    Ensure you keep the frontmatter untouched and edit afterwards. The highest priority
+		    is that the upcoming event is organised with intention - attention to detail is key.
+		    Write a plan for things that will be needed, a timeframe of which things should be achieved,
+	    what to do on the day, potential pitfalls to look out for, etc. Format the text using Obsidian markdown.
+		    Do not respond as if you are talking to me, just write the note for my reference.";
+            string fileContent = File.ReadAllText($"{fullPath}.md");
+            prompt += $"\n{fileContent}";
+            string geminiResponse = queryGeminiModel(prompt).GetAwaiter().GetResult();
+
+            Console.Write(geminiResponse);
+            File.WriteAllText($"{fullPath}.md", geminiResponse);
 
 
-
-
-
-
-            int result = execlp($"nvim", "nvim", $"{fullPath}.md", $"+ 52", null);
+            int executeNeovim = execlp($"nvim", "nvim", $"{fullPath}.md", $"+ 52", null);
 
 
         }
 
+        static async Task<string> queryGeminiModel(string prompt)
+        {
+            string GEMINI_API_KEY = Environment.GetEnvironmentVariable("GEMINI_API_KEY");
+            Console.Write($"Api Key: {GEMINI_API_KEY}");
+            string url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent";
+            string jsonPayload = $@"
+{{
+    ""contents"": [
+        {{
+            ""parts"": [
+                {{
+                    ""text"": ""{prompt}""
+                }}
+            ]
+        }}
+    ],
+    ""generationConfig"": {{
+        ""thinkingConfig"": {{
+            ""thinkingBudget"": 500
+        }}
+    }}
+}}";
+
+
+            using var client = new HttpClient();
+            client.DefaultRequestHeaders.Add("x-goog-api-key", GEMINI_API_KEY);
+
+            var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+
+            var response = await client.PostAsync(url, content);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                string errorBody = await response.Content.ReadAsStringAsync();
+                throw new Exception($"Error: {response.StatusCode}\n{errorBody}");
+            }
+
+            return await response.Content.ReadAsStringAsync();
+        }
 
         static string? getUserInput(string prompt, bool allowEmpty = false)
         {
@@ -177,6 +223,7 @@ namespace MarkdownGenerator
 
 
         }
+
 
         [DllImport("libc", EntryPoint = "execlp", CharSet = CharSet.Ansi, SetLastError = true)]
         private static extern int execlp(string program, string arg0, string arg1, string arg2, string? end);

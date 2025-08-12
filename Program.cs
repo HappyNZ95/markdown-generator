@@ -19,8 +19,11 @@ namespace MarkdownGenerator
             string title = getUserInput("Title: ");
             string[] tags = getTags();
 
+            bool upcomingEvent = false;
+
             if (tags.Contains<string>("upcoming") && tags.Contains<string>("event"))
             {
+                upcomingEvent = true;
                 formattedDate = getUserInput("Date of Event (YYYY-MM-DD)");
                 Console.Write($"date: {date.ToString()}");
                 Console.WriteLine("There's an upcoming event!");
@@ -40,6 +43,14 @@ namespace MarkdownGenerator
                 foreach (string line in frontMatter)
                     outputFile.WriteLine(line);
             }
+
+            if (upcomingEvent)
+            {
+
+            }
+
+
+
 
 
 

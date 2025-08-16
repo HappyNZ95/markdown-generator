@@ -1,8 +1,10 @@
 ﻿// See https://aka.ms/new-console-template for more information
 using System;
+using System;
 using System.Runtime.InteropServices;
 using System.Net.Http;
 using System.Text; //Encoding.UTF8
+using System.Text.Json;
 
 namespace MarkdownGenerator
 
@@ -23,13 +25,6 @@ namespace MarkdownGenerator
 
             bool upcomingEvent = false;
 
-            if (tags.Contains<string>("upcoming") && tags.Contains<string>("event"))
-            {
-                upcomingEvent = true;
-                formattedDate = getUserInput("Date of Event (YYYY-MM-DD)");
-                Console.Write($"date: {date.ToString()}");
-                Console.WriteLine("There's an upcoming event!");
-            }
 
             Dictionary<string, string> additionalProperties = getAdditionalProperties();
             List<string> frontMatter = generateFrontMatter(formattedDate, title, additionalProperties, tags);
@@ -46,22 +41,36 @@ namespace MarkdownGenerator
                     outputFile.WriteLine(line);
             }
 
+            if (tags.Contains<string>("upcoming") && tags.Contains<string>("event"))
+            {
+                upcomingEvent = true;
+                formattedDate = getUserInput("Date of Event (YYYY-MM-DD)");
+                Console.Write($"date: {date.ToString()}");
 
-            string prompt = @"Update the following obsidian note that outlines a plan for an upcoming event. 
+                string additionalLLMContext = getUserInput("Additional context for LLM?", true);
+
+
+                string prompt = $@"Update the following obsidian note that outlines a plan for an upcoming event. 
 		    Ensure you keep the frontmatter untouched and edit afterwards. The highest priority
 		    is that the upcoming event is organised with intention - attention to detail is key.
 		    Write a plan for things that will be needed, a timeframe of which things should be achieved,
-	    what to do on the day, potential pitfalls to look out for, etc. Format the text using Obsidian markdown.
-		    Do not respond as if you are talking to me, just write the note for my reference.";
-            string fileContent = File.ReadAllText($"{fullPath}.md");
-            prompt += $"\n{fileContent}";
-            string geminiResponse = queryGeminiModel(prompt).GetAwaiter().GetResult();
+	    what to do on the day, potential pitfalls to look out for, etc. Format the text using some but minimal
+		    obsidian markdown i.e not emphasising with bold often, not numbering headings, etc. The human
+		    will end up editing your syntactic sugar out.
+		    Do not respond as if you are talking to me, just write the note for my reference.
+		    Here is some additional context provided by the user: {additionalLLMContext}";
 
-            Console.Write(geminiResponse);
-            File.WriteAllText($"{fullPath}.md", geminiResponse);
+                string fileContent = File.ReadAllText($"{fullPath}.md");
+                prompt += $"\n{fileContent}";
+                string geminiResponse = queryGeminiModel(prompt).GetAwaiter().GetResult();
+
+                Console.Write(geminiResponse);
+                File.WriteAllText($"{fullPath}.md", geminiResponse);
+            }
 
 
-            int executeNeovim = execlp($"nvim", "nvim", $"{fullPath}.md", $"+ 52", null);
+
+            int executeNeovim = execlp($"nvim", "nvim", $"{fullPath}.md", $"+ {frontMatter.Count + 1}", null);
 
 
         }
@@ -84,7 +93,7 @@ namespace MarkdownGenerator
     ],
     ""generationConfig"": {{
         ""thinkingConfig"": {{
-            ""thinkingBudget"": 500
+            ""thinkingBudget"": 128
         }}
     }}
 }}";
@@ -103,8 +112,22 @@ namespace MarkdownGenerator
                 throw new Exception($"Error: {response.StatusCode}\n{errorBody}");
             }
 
-            return await response.Content.ReadAsStringAsync();
+
+            string jsonString = await response.Content.ReadAsStringAsync();
+
+            using JsonDocument doc = JsonDocument.Parse(jsonString);
+
+            string text = doc.RootElement
+        .GetProperty("candidates")[0]
+            .GetProperty("content")
+            .GetProperty("parts")[0]
+            .GetProperty("text")
+            .GetString();
+
+            return text;
+
         }
+
 
         static string? getUserInput(string prompt, bool allowEmpty = false)
         {
